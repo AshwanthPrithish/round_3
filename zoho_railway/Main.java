@@ -6,12 +6,12 @@ import java.util.*;
 
 class TicketBooker
 {
-    static HashMap<String, Passenger> passengers = new HashMap<>();
+    static LinkedHashMap<String, Passenger> passengers = new LinkedHashMap<>();
     static int lowerSeats = 1;
     static int middleSeats = 1;
     static int upperSeats = 1;
-    static int racSeats = 1;
-    static int waitingSeats = 1;
+    static int racSeats = 2;
+    static int waitingSeats = 2;
 
     static int bookedlowerSeats = 0;
     static int bookedmiddleSeats = 0;
@@ -20,6 +20,96 @@ class TicketBooker
     static int bookedwaitingSeats = 0;
 
     static int passengerId = 0;
+
+
+    //start handling cancellations
+
+    public static boolean shiftWaitingToRac(String s)
+    {
+        String a = "";
+        Passenger p = null;
+        for(String seat: passengers.keySet())
+        {
+            if(seat.charAt(seat.length() - 1) == 'W')
+            {
+                p = passengers.get(seat);
+                a = seat;
+                break;
+            }
+        }
+        // if there are any passenger in waiting list
+        if(p != null)
+        {
+            TicketBooker.passengers.remove(s);
+            TicketBooker.passengers.remove(a);
+            bookedracSeats--;
+            racSeats++;
+            String seatNo = ""+(bookedracSeats)+"R";
+            bookedracSeats++;
+            racSeats--;
+            passengers.put(seatNo, p);
+            return true;
+        }
+        return false;
+    }
+
+    public static String shiftRacToConfirmed(String s)
+    {
+        String ret = "";
+        Passenger p = null;
+        char class_ = s.charAt(s.length() - 1);
+        for(String seat: passengers.keySet())
+        {
+            if(seat.charAt(seat.length() - 1) == 'R')
+            {
+                p = passengers.get(seat);
+                ret = seat;
+                break;
+            }
+        }
+        if(p != null)
+        {
+            TicketBooker.passengers.remove(s);
+            TicketBooker.passengers.remove(ret);
+            switch(class_)
+            {
+            case 'L':
+                {
+                    bookedlowerSeats--;
+                    lowerSeats++;
+                    String seatNo = ""+(bookedlowerSeats)+"L";
+                    bookedlowerSeats++;
+                    lowerSeats--;
+                    passengers.put(seatNo, p);
+                    break;
+                }
+            case 'M':
+                {
+                    bookedmiddleSeats--;
+                    middleSeats++;
+                    String seatNo = ""+(bookedmiddleSeats)+"M";
+                    bookedmiddleSeats++;
+                    middleSeats--;
+                    passengers.put(seatNo, p);
+                    break;
+                }
+            case 'U':
+                {
+                    bookedupperSeats--;
+                    upperSeats++;
+                    String seatNo = ""+(bookedupperSeats)+"U";
+                    bookedupperSeats++;
+                    upperSeats--;
+                    passengers.put(seatNo, p);
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+
+    //end handling cancellations
+
 
     public static void addPassenger(Passenger p)
     {
@@ -204,40 +294,96 @@ class Main
                 {
                     System.out.println("Enter Seat Number: ");
                     String seat = sc.next();
-                    if(TicketBooker.passengers.containsKey(seat))
-                    {
-                        if(seat.charAt(seat.length() - 1) == 'L')
-                        {
-                            TicketBooker.racSeats++;
-                            TicketBooker.bookedracSeats--;
-                        }
-                        else if(seat.charAt(seat.length() - 1) == 'M')
-                        {
-                            TicketBooker.middleSeats++;
-                            TicketBooker.bookedmiddleSeats--;
-                        }
-                        else if(seat.charAt(seat.length() - 1) == 'U')
-                        {
-                            TicketBooker.upperSeats++;
-                            TicketBooker.bookedupperSeats--;
-                        }
-                        else if(seat.charAt(seat.length() - 1) == 'R')
-                        {
-                            TicketBooker.racSeats++;
-                            TicketBooker.bookedracSeats--;
-                        }
-                        else if(seat.charAt(seat.length() - 1) == 'W')
-                        {
-                            TicketBooker.waitingSeats++;
-                            TicketBooker.bookedwaitingSeats--;
-                        }
-                    TicketBooker.passengers.remove(seat);
-                    System.out.println("Cancelled Ticket!");
-                    }
-                    else
+                    if(!TicketBooker.passengers.containsKey(seat))
                     {
                         System.out.println("No such ticket booked!");
                     }
+                    else
+                    {
+                        if(seat.charAt(seat.length() - 1) == 'W')
+                        {
+                            TicketBooker.waitingSeats++;
+                            TicketBooker.bookedwaitingSeats--;
+                            TicketBooker.passengers.remove(seat);
+                        }
+
+                        else if(seat.charAt(seat.length() - 1) == 'R')
+                        {
+                            boolean update = TicketBooker.shiftWaitingToRac(seat);
+                            if(!update)
+                            {
+                                TicketBooker.racSeats++;
+                                TicketBooker.bookedracSeats--;
+                            }
+                            else
+                            {
+                                TicketBooker.waitingSeats++;
+                                TicketBooker.bookedwaitingSeats--;
+                            }
+
+                        }
+
+                        else if(seat.charAt(seat.length() - 1) == 'U')
+                        {
+                            String racToConfirmed = TicketBooker.shiftRacToConfirmed(seat);
+                            if(racToConfirmed != "")
+                            {
+                                boolean update = TicketBooker.shiftWaitingToRac(racToConfirmed);
+                                if(!update)
+                                {
+                                    TicketBooker.upperSeats++;
+                                    TicketBooker.bookedupperSeats--;
+                                }
+                                else
+                                {
+                                   TicketBooker.waitingSeats++;
+                                   TicketBooker.bookedwaitingSeats--;
+                                }
+                            }
+                        }
+
+
+                        else if(seat.charAt(seat.length() - 1) == 'L')
+                        {
+                            String racToConfirmed = TicketBooker.shiftRacToConfirmed(seat);
+                            if(racToConfirmed != "")
+                            {
+                                boolean update = TicketBooker.shiftWaitingToRac(racToConfirmed);
+                                if(!update)
+                                {
+                                    TicketBooker.lowerSeats++;
+                                    TicketBooker.bookedlowerSeats--;
+                                }
+                                else
+                                {
+                                    TicketBooker.waitingSeats++;
+                                    TicketBooker.bookedwaitingSeats--;
+                                }
+                            }
+                        }
+
+                        else if(seat.charAt(seat.length() - 1) == 'M')
+                        {
+                            String racToConfirmed = TicketBooker.shiftRacToConfirmed(seat);
+                            if(racToConfirmed != "")
+                            {
+                                boolean update = TicketBooker.shiftWaitingToRac(racToConfirmed);
+                                if(!update)
+                                {
+                                    TicketBooker.middleSeats++;
+                                    TicketBooker.bookedmiddleSeats--;
+                                }
+                                else
+                                {
+                                    TicketBooker.waitingSeats++;
+                                    TicketBooker.bookedwaitingSeats--;
+                                }
+                            }
+                        }
+
+                        System.out.println("Cancelled Ticket!");
+                    }
+
                     break;
                 }
             case 3:
@@ -258,3 +404,214 @@ class Main
         }
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+a 1 L
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+b 2 U
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+c 3 M
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+d 4 U
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+e 5 L
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+4
+Upper: 0
+Lower: 0
+Middle: 0
+RAC: 0
+Waiting: 2
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+f 8 L
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+g 8 M
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+j 9 L
+Tickets full!
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+3
+{0L=a male 1 L, 0U=b male 2 U, 0M=c male 3 M, 0R=d male 4 U, 1R=e male 5 L, 0W=f male 8 L, 1W=g male 8 M}
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+2
+Enter Seat Number:
+0W
+Cancelled Ticket!
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+3
+{0L=a male 1 L, 0U=b male 2 U, 0M=c male 3 M, 0R=d male 4 U, 1R=e male 5 L, 1W=g male 8 M}
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+2
+Enter Seat Number:
+0W
+No such ticket booked!
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+2
+Enter Seat Number:
+1W
+Cancelled Ticket!
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+3
+{0L=a male 1 L, 0U=b male 2 U, 0M=c male 3 M, 0R=d male 4 U, 1R=e male 5 L}
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+1
+Enter name, age, berth preference:
+g 8 M
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+3
+{0L=a male 1 L, 0U=b male 2 U, 0M=c male 3 M, 0R=d male 4 U, 1R=e male 5 L, 0W=g male 8 M}
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+2
+Enter Seat Number:
+0M
+Cancelled Ticket!
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+3
+{0L=a male 1 L, 0U=b male 2 U, 1R=g male 8 M, 0M=d male 4 U}
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+4
+Upper: 0
+Lower: 0
+Middle: 0
+RAC: 0
+Waiting: 2
+1. Book
+2. Cancel
+3. Print booked tickets
+4. Print available tickets
+5. Exit
+*/

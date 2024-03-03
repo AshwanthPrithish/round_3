@@ -8,9 +8,9 @@ public class Passenger
     public void getDetails()
     {
         Scanner sc = new Scanner(System.in);
-        System.out.println("Enter name, gender, age, berth preference: ");
+        System.out.println("Enter name, age, berth preference: ");
         name = sc.next();
-        gender = sc.next();
+        gender = "male";
         age = sc.nextInt();
         berthPref = sc.next();
     }
