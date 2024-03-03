@@ -7,17 +7,19 @@ class Taxi
     public static int tId = 1;
     public char currentPos = 'A';
     public float earnings = 0;
-    public int freeAfter = 0;
+    public int freeAfter = 6;
     public int id;
+    public ArrayList<String> trips;
     public static ArrayList<Taxi> taxiList = new ArrayList<Taxi>();
 
-    public Taxi(){ this.id = tId++; }
+    public Taxi(){ this.id = tId++; trips = new ArrayList<String>(); }
 
-    public void updateDetails(char currentPos, float earnings, int freeAfter)
+    public void updateDetails(char currentPos, float earnings, int freeAfter, String trip)
     {
         this.currentPos = currentPos;
         this.earnings += earnings;
         this.freeAfter = freeAfter;
+        this.trips.add(trip);
     }
 
     public static void createTaxis(int x)
@@ -34,8 +36,8 @@ class Taxi
         ArrayList<Taxi> freeTaxis = new ArrayList<>();
         for(Taxi t : taxiList)
         {
-            int taxiDistFromCustomer = Math.abs((t.currentPos-'A')-(c.pickupPoint-'A'));
-            if((taxiDistFromCustomer+t.freeAfter) <= c.pickupTime)
+            int taxiDistFromCustomer = Math.abs((t.currentPos-'0')-(c.pickupPoint-'0'));
+            if(t.freeAfter <= c.pickupTime && taxiDistFromCustomer <= c.pickupTime-t.freeAfter)
             {
                 freeTaxis.add(t);
             }
@@ -44,6 +46,22 @@ class Taxi
         return freeTaxis;
     }
 
+
+    public static Taxi chooseMinTaxi(ArrayList<Taxi> freeTaxis, Customer c)
+    {
+        int min = 999;
+        Taxi n = null;;
+        for(Taxi t : freeTaxis)
+        {
+            int distToCustomer = Math.abs((t.currentPos-'0')-(c.pickupPoint-'0'));
+            if(min > distToCustomer)
+            {
+                min = distToCustomer;
+                n = t;
+            }
+        }
+        return n;
+    }
     public static void bookCustomer(Customer c)
     {
         ArrayList<Taxi> freeTaxis = getFreeTaxis(c);
@@ -52,32 +70,38 @@ class Taxi
             System.out.println("No Taxi available!");
             return;
         }
-        Taxi chosenTaxi = freeTaxis.get(0);
+        Taxi chosenTaxi = chooseMinTaxi(freeTaxis, c);
 
-        int taxiDistFromCustomer = Math.abs((chosenTaxi.currentPos-'A')-(c.pickupPoint-'A'));
+        int taxiTravelDist = Math.abs((c.dropPoint-'A')-(c.pickupPoint-'A'));
 
-        int kms = taxiDistFromCustomer * 15;
+        int kms = taxiTravelDist * 15;
         float earnings_ = 100;
         kms -= 5;
         float extra = (Math.abs(kms) * 10);
         earnings_ += extra;
 
-        int freeAfter_ = c.pickupTime + taxiDistFromCustomer;
+        int freeAfter_ = c.pickupTime + taxiTravelDist;
+        System.out.println("Taxi "+ chosenTaxi.id + " booked!");
 
-        chosenTaxi.updateDetails(c.dropPoint, earnings_, 0);
+        String trip = chosenTaxi.id + " " + c.pickupPoint + " " + c.dropPoint + " " +c.pickupTime +" " + freeAfter_ + " " + earnings_;
+        chosenTaxi.updateDetails(c.dropPoint, earnings_, freeAfter_, trip);
     }
 
     public static void printTaxiDetails()
     {
         for(Taxi t: taxiList)
         {
-            System.out.println("Taxi ID: " + t.id);
-            System.out.println("Current Position: " + t.currentPos);
-            System.out.println("Total Earnings: " + t.earnings);
-            System.out.println("Free After: " + t.freeAfter);
+            System.out.print("Taxi "+ t.id+" Details: ");
+            System.out.println(t);
             System.out.println("-----------------------------------------");
         }
     }
+
+    public String toString()
+    {
+        return "(" + id + "," + currentPos + "," + earnings + "," + freeAfter + ")\nTrips of Taxi " + id + ":\n" + trips;
+    }
+
 }
 
 class Main
