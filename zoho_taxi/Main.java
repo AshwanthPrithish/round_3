@@ -37,7 +37,7 @@ class Taxi
         for(Taxi t : taxiList)
         {
             int taxiDistFromCustomer = Math.abs((t.currentPos-'0')-(c.pickupPoint-'0'));
-            if(t.freeAfter <= c.pickupTime && taxiDistFromCustomer <= c.pickupTime-t.freeAfter)
+            if(taxiDistFromCustomer+t.freeAfter <= c.pickupTime)
             {
                 freeTaxis.add(t);
             }
